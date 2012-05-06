@@ -1,0 +1,27 @@
+[debug] 
+[debug] Initial source changes: 
+[debug] 	removed:Set()
+[debug] 	added: Set()
+[debug] 	modified: Set(/home/lieslw/WordLinks/src/main/scala/WordLinker.scala)
+[debug] Removed products: Set()
+[debug] Modified external sources: Set()
+[debug] Modified binary dependencies: Set()
+[debug] Initial directly invalidated sources: Set(/home/lieslw/WordLinks/src/main/scala/WordLinker.scala)
+[debug] 
+[debug] Sources indirectly invalidated by:
+[debug] 	product: Set()
+[debug] 	binary dep: Set()
+[debug] 	external source: Set()
+[debug] Initially invalidated: Set(/home/lieslw/WordLinks/src/main/scala/WordLinker.scala)
+[info] Compiling 1 Scala source to /home/lieslw/WordLinks/target/scala-2.9.1/classes...
+[debug] Interfacing (CompilerInterface) with Scala compiler version 2.9.1.final
+[debug] Calling Scala compiler with arguments  (CompilerInterface):
+[debug] 	-d
+[debug] 	/home/lieslw/WordLinks/target/scala-2.9.1/classes
+[debug] 	-bootclasspath
+[debug] 	/home/lieslw/jdk1.7.0_03/jre/lib/resources.jar:/home/lieslw/jdk1.7.0_03/jre/lib/rt.jar:/home/lieslw/jdk1.7.0_03/jre/lib/sunrsasign.jar:/home/lieslw/jdk1.7.0_03/jre/lib/jsse.jar:/home/lieslw/jdk1.7.0_03/jre/lib/jce.jar:/home/lieslw/jdk1.7.0_03/jre/lib/charsets.jar:/home/lieslw/jdk1.7.0_03/jre/classes:/home/lieslw/.sbt/boot/scala-2.9.1/lib/scala-library.jar
+[debug] 	-classpath
+[debug] 	/home/lieslw/WordLinks/target/scala-2.9.1/classes
+[debug] 	/home/lieslw/WordLinks/src/main/scala/WordLinker.scala
+[debug] 	Invalidated direct: Set()
+[debug] Incrementally invalidated: Set()
