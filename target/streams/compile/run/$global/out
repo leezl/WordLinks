@@ -3,6 +3,12 @@
 [debug] Waiting for threads to exit or System.exit to be called.
 [debug]   Classpath:
 [debug] 	/home/lieslw/WordLinks/target/scala-2.9.1/classes
+[debug] 	/home/lieslw/WordLinks/lib/libsvm.jar
+[debug] 	/home/lieslw/WordLinks/lib/Jama-1.0.2.jar
+[debug] 	/home/lieslw/WordLinks/lib/commons-math-1.2.jar
+[debug] 	/home/lieslw/WordLinks/lib/weka.jar
+[debug] 	/home/lieslw/WordLinks/lib/javaml-0.1.6.jar
+[debug] 	/home/lieslw/WordLinks/lib/ajt-2.5.jar
 [debug] 	/home/lieslw/.sbt/boot/scala-2.9.1/lib/scala-library.jar
 [debug] Waiting for thread run-main to exit
 [debug] 	Thread run-main exited.

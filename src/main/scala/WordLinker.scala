@@ -1,5 +1,8 @@
 import java.io.{BufferedReader, FileReader}
 import scala.collection.mutable._
+import net.sf.javaml.distance.fastdtw._
+import net.sf.javaml.distance.fastdtw.timeseries.TimeSeries
+import net.sf.javaml.distance.fastdtw.timeseries.TimeSeriesPoint
 
 object WordLinker {
   var totals = Map[Double, Double]()
@@ -14,50 +17,96 @@ object WordLinker {
     //normalize
     words = normalizer(words, totals)
     //find word match, collect matched values into array
+    //wordList: year and count for a specific word
     var wordList = findWordList("war", words)
+    //var derivList = deriver(wordList)
     //smoothers
-    var wordList3 = smoother(wordList, 3)
-    var wordList5 = smoother(wordList, 5)
-    var wordList10 = smoother(wordList,10)
+    //var wordList3 = smoother(wordList, 3)
+    //var wordList5 = smoother(wordList, 5)
+    //var wordList10 = smoother(wordList,10)
+    //var derivList3 = smoother(derivList, 3)
+    //var derivList5 = smoother(derivList, 5)
+    //var derivList10 = smoother(derivList,10)
     //find peaks (store ranges)
+    //wordPeaks: begin, peak, end indices for peak ranges
     var wordPeaks = peakFinder(wordList)
-    var wordPeaks3 = peakFinder(wordList3)
-    var wordPeaks5 = peakFinder(wordList5)
-    var wordPeaks10 = peakFinder(wordList10)
-    //check where peaks are with each smoothing:
-    //comparePeaks(wordList, wordPeaks, wordList3, wordPeaks3)
-    //comparePeaks(wordList, wordPeaks, wordList5, wordPeaks5)
-    //comparePeaks(wordList, wordPeaks, wordList10, wordPeaks10)
+    //var wordPeaks3 = peakFinder(wordList3)
+    //var wordPeaks5 = peakFinder(wordList5)
+    //var wordPeaks10 = peakFinder(wordList10)
     //run various DTW (write own or use library?)
     //iterate through 
-    var wordListOther = List[(Double, Double)]
+    var wordListOther = List[(Double, Double)]()
+    var lowCostOverall = 999.9
+    var highCostOverall = -1.0
+    var farthestWordOverall = ""
+    var closestWordOverall = ""
+    var lowCostPeak = 999.9//MAKE ARRAYs
+    var highCostPeak = -1.0
+    var farthestWordPeak = ""
+    var closestWordPeak = ""
     for (i<- 0 until dictionary.length){
-      //compare other word to current
-      //repeat above...
-      var wordListOther = findWordList(dictionary(i), words)
-      var wordListOther3 = smoother(wordListOther, 3)
-      var wordListOther5 = smoother(wordListOther, 5)
-      var wordListOther10 = smoother(wordListOther,10)
-      //runDTW inside each peakSet
-      for(j<- 0 until wordPeaks.length){
-
+      if (dictionary(i) != "war"){
+        //compare other word to current
+        //repeat above...
+        var wordListOther = findWordList(dictionary(i), words)
+        var timeSeries = new TimeSeries(1)//size TimeSeries
+        var timeSeriesOther = new TimeSeries(1)//size TimeSeries
+        for (j<- 0 until wordList.length){
+          timeSeriesOther.addLast(wordListOther(j)._1, new TimeSeriesPoint(Array(wordListOther(j)._2))) //add count
+          timeSeries.addLast(wordList(j)._1, new TimeSeriesPoint(Array(wordList(j)._2))) //add count
+        }
+        var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, 5)
+        if (info.getDistance < lowCostOverall){
+          lowCostOverall = info.getDistance
+          closestWordOverall = dictionary(i)
+        } else if (info.getDistance > highCostOverall){
+          highCostOverall = info.getDistance
+          farthestWordOverall = dictionary(i)
+        }
+        //var derivListOther = deriver(wordListOther)
+        //var wordListOther3 = smoother(wordListOther, 3)
+        //var wordListOther5 = smoother(wordListOther, 5)
+        //var wordListOther10 = smoother(wordListOther,10)
+        //var derivList3 = smoother(derivListOther, 3)
+        //var derivList5 = smoother(derivListOther, 5)
+        //var derivList10 = smoother(derivListOther,10)
+        //runDTW
+        /*for (i<- 0 until wordPeaks.length){
+          var timeSeries = new TimeSeries(1)//size TimeSeries
+          var timeSeriesOther = new TimeSeries(1)//size TimeSeries
+          //println(wordPeaks(i)._3-wordPeaks(i)._1)
+          for (j<- wordPeaks(i)._1 to wordPeaks(i)._3){
+            timeSeriesOther.addLast(wordListOther(j)._1, new TimeSeriesPoint(Array(wordListOther(j)._2))) //add count
+            timeSeries.addLast(wordList(j)._1, new TimeSeriesPoint(Array(wordList(j)._2))) //add count
+          }
+          //run DTW
+          //var distFn = DistanceFunctionFactory.getDistFnByName("EuclideanDistance")
+          var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, 5)
+          //println("Warp Distance: " + info.getDistance)
+          //println("Warp Path:     " + info.getPath)
+          if (info.getDistance < lowCost){
+            lowCost = info.getDistance
+            closestWord = dictionary(i)
+          } else if (info.getDistance > highCost){
+            highCost = info.getDistance
+            farthestWord = dictionary(i)
+          }
+        }*/
+        //check Costs
+        //TRY find derivatives and compare those
+        //Check Costs
       }
-      for(j<- 0 until wordPeaks3.length){
-
-      }
-      for(j<- 0 until wordPeaks5.length){
-
-      }
-      for(j<- 0 until wordPeaks10.length){
-
-      }
-      //check Costs
-      //TRY find derivatives and compare those
-      //Check Costs
     }
+    println("Closest Word Overall: " + closestWordOverall + " Distance: " + lowCostOverall)
+    println("Farthest Word Overall: " + farthestWordOverall + " Distance: " + highCostOverall)
+    println("==========")
   }
 
   //Normalizes according to yearly publications (or some other array to divide by)
+  /* NEEDS: DATA: Word,Year,Count
+  *         yearlyGRams: Year,TotalCount
+  *  RETURNS:newData: Word,Year,CountNew 
+  * */
   def normalizer(data : List[(String, Double,Double)], yearlyGrams : Map[Double,Double]) : List[(String,  Double,Double)] = {
     //make temp array (no overwriting)
     var newData = List[(String,Double,Double)]()
@@ -81,6 +130,10 @@ object WordLinker {
   }
 
   //Uses Moving Average Smoothing to smooth data
+  /* NEEDS: data: Year,Count
+ *         smoothness:
+ *  RETURNS:newData: Year,CountNew 
+ * */
   def smoother(data : List[(Double,Double)], smoothness : Int = 3) : List[(Double,Double)] = {
     //create temp Array
     var newData = List[(Double,Double)]()
@@ -110,6 +163,9 @@ object WordLinker {
   
   //Cheap Slope calculation, returns same length array, where final value is same as previous
   // //(bad.If you don't like it send me more data))
+  /* NEEDS: data: Year,Count
+ *  RETURNS:newData: slopes 
+ * */
   def deriver(data : List[(Double,Double)]) : Array[Double]  = {
     var newData = Array[Double](data.length)
     //find slope between every two points
@@ -123,6 +179,10 @@ object WordLinker {
   
   //Find "Peaks": given array, find Pos + Neg slopes (consistent) return ranges for peaks in array of tuples...return index of maxima? Need ranges
   //  //Use strictness parameter? //findMaxima, with threshold for tolerance yay
+  /* NEEDS: data: Year,Count
+ *         threshold:
+ *  RETURNS:newData: begin, peak, end 
+ * */
   def peakFinder(data : List[(Double,Double)], threshold : Int = 2) : List[(Int, Int, Int)] = {//List = [leftLow, Peak, rightLow]
     //like sliding window, find points that are higher then -threshold- many neighbors
     var peaks = List[(Int,Int,Int)]()
@@ -157,7 +217,10 @@ object WordLinker {
     //Add to list
     peaks //return
   } //low, mid, high
-  
+
+  /* NEEDS: filename: string
+ *  RETURNS:totals: Year, totalCounts 
+ * */
   def readTotals(filename : String) : Map[Double, Double] = {
     var totals = Map[Double,Double]()
     try{
@@ -178,6 +241,9 @@ object WordLinker {
     totals
   }
 
+  /* NEEDS: filename: string
+ *  RETURNS:newData: word, year, count 
+ * */
   def readWords(filename : String) : List[(String, Double, Double)] = {
     var counts = List[(String,Double,Double)]()
     try{
@@ -204,6 +270,10 @@ object WordLinker {
     counts
   }
 
+  /* NEEDS:word: string 
+  *        data: word,Year,Count
+ *  RETURNS:newData: Year,count 
+ * */
   def findWordList(word : String, data : List[(String, Double, Double)]) : List[(Double, Double)] = {
     var wordOccur = List[(Double, Double)]()
     //search list for word matches, append to wordOccur
