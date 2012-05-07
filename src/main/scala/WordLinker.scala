@@ -8,6 +8,8 @@ object WordLinker {
   var totals = Map[Double, Double]()
   var words = List[(String,Double,Double)]()
   var dictionary = List[String]()
+  var startWord = "war"
+  var radius = 5
 
   def main(args: Array[String]) {
     //data in
@@ -18,15 +20,12 @@ object WordLinker {
     words = normalizer(words, totals)
     //find word match, collect matched values into array
     //wordList: year and count for a specific word
-    var wordList = findWordList("war", words)
-    //var derivList = deriver(wordList)
+    var wordList = findWordList(startWord, words)
+    var derivList = deriver(wordList)
     //smoothers
     //var wordList3 = smoother(wordList, 3)
     //var wordList5 = smoother(wordList, 5)
     //var wordList10 = smoother(wordList,10)
-    //var derivList3 = smoother(derivList, 3)
-    //var derivList5 = smoother(derivList, 5)
-    //var derivList10 = smoother(derivList,10)
     //find peaks (store ranges)
     //wordPeaks: begin, peak, end indices for peak ranges
     var wordPeaks = peakFinder(wordList)
@@ -40,14 +39,34 @@ object WordLinker {
     var highCostOverall = -1.0
     var farthestWordOverall = ""
     var closestWordOverall = ""
-    var lowCostPeak = 999.9//MAKE ARRAYs
-    var highCostPeak = -1.0
-    var farthestWordPeak = ""
-    var closestWordPeak = ""
+    var lowCostSlopeO = 999.9
+    var highCostSlopeO = -1.0
+    var farthestWordSlopeO = ""
+    var closestWordSlopeO = ""
+    var lowCostPeak = MutableList[Double]()
+    var highCostPeak = MutableList[Double]()
+    var farthestWordPeak = MutableList[String]()
+    var closestWordPeak = MutableList[String]()
+    for (i<- 0 until wordPeaks.length){
+      lowCostPeak += 999.0
+      highCostPeak += -1.0
+      farthestWordPeak += ""
+      closestWordPeak += ""
+    }
+    var lowCostSlopeP = MutableList[Double]()
+    var highCostSlopeP = MutableList[Double]()
+    var farthestWordSlopeP = MutableList[String]()
+    var closestWordSlopeP = MutableList[String]()
+    for (i<- 0 until wordPeaks.length){
+      lowCostSlopeP += 999.0
+      highCostSlopeP += -1.0
+      farthestWordSlopeP += ""
+      closestWordSlopeP += ""
+    }
+    //run OVERALL DTW
     for (i<- 0 until dictionary.length){
-      if (dictionary(i) != "war"){
+      if (dictionary(i) != startWord){
         //compare other word to current
-        //repeat above...
         var wordListOther = findWordList(dictionary(i), words)
         var timeSeries = new TimeSeries(1)//size TimeSeries
         var timeSeriesOther = new TimeSeries(1)//size TimeSeries
@@ -55,7 +74,7 @@ object WordLinker {
           timeSeriesOther.addLast(wordListOther(j)._1, new TimeSeriesPoint(Array(wordListOther(j)._2))) //add count
           timeSeries.addLast(wordList(j)._1, new TimeSeriesPoint(Array(wordList(j)._2))) //add count
         }
-        var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, 5)
+        var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, radius)
         if (info.getDistance < lowCostOverall){
           lowCostOverall = info.getDistance
           closestWordOverall = dictionary(i)
@@ -63,43 +82,99 @@ object WordLinker {
           highCostOverall = info.getDistance
           farthestWordOverall = dictionary(i)
         }
-        //var derivListOther = deriver(wordListOther)
-        //var wordListOther3 = smoother(wordListOther, 3)
-        //var wordListOther5 = smoother(wordListOther, 5)
-        //var wordListOther10 = smoother(wordListOther,10)
-        //var derivList3 = smoother(derivListOther, 3)
-        //var derivList5 = smoother(derivListOther, 5)
-        //var derivList10 = smoother(derivListOther,10)
-        //runDTW
-        /*for (i<- 0 until wordPeaks.length){
+      }
+    }
+    //run PEAKS DTW
+    for (i<- 0 until wordPeaks.length){
+      for(k<- 0 until  dictionary.length){
+        var wordListOther = findWordList(dictionary(k), words)
+        if (dictionary(k)!= startWord){
           var timeSeries = new TimeSeries(1)//size TimeSeries
           var timeSeriesOther = new TimeSeries(1)//size TimeSeries
-          //println(wordPeaks(i)._3-wordPeaks(i)._1)
           for (j<- wordPeaks(i)._1 to wordPeaks(i)._3){
             timeSeriesOther.addLast(wordListOther(j)._1, new TimeSeriesPoint(Array(wordListOther(j)._2))) //add count
             timeSeries.addLast(wordList(j)._1, new TimeSeriesPoint(Array(wordList(j)._2))) //add count
           }
           //run DTW
-          //var distFn = DistanceFunctionFactory.getDistFnByName("EuclideanDistance")
-          var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, 5)
+          var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, radius)
           //println("Warp Distance: " + info.getDistance)
           //println("Warp Path:     " + info.getPath)
-          if (info.getDistance < lowCost){
-            lowCost = info.getDistance
-            closestWord = dictionary(i)
-          } else if (info.getDistance > highCost){
-            highCost = info.getDistance
-            farthestWord = dictionary(i)
+          if (info.getDistance < lowCostPeak(i)){
+            lowCostPeak(i) = info.getDistance
+            closestWordPeak(i) = dictionary(k)
+          } else if (info.getDistance > highCostPeak(i)){
+            highCostPeak(i) = info.getDistance
+            farthestWordPeak(i) = dictionary(k)
           }
-        }*/
-        //check Costs
-        //TRY find derivatives and compare those
-        //Check Costs
+        }
       }
     }
+    //run on SLOPES OVERALL
+    for (i<- 0 until dictionary.length){
+      if (dictionary(i) != startWord){
+        //compare other word to current
+        var wordListOther = findWordList(dictionary(i), words)
+        var derivListOther = deriver(wordListOther)
+        var timeSeries = new TimeSeries(1)  //size TimeSeries
+        var timeSeriesOther = new TimeSeries(1)  //size TimeSeries
+        for (j<- 0 until derivList.length){
+          timeSeriesOther.addLast(derivListOther(j)._1, new TimeSeriesPoint(Array(derivListOther(j)._2))) //add count
+          timeSeries.addLast(derivList(j)._1, new TimeSeriesPoint(Array(derivList(j)._2))) //add count
+        }
+        var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, radius)
+        if (info.getDistance < lowCostSlopeO){
+          lowCostSlopeO = info.getDistance
+          closestWordSlopeO = dictionary(i)
+        } else if (info.getDistance > highCostSlopeO){
+          highCostSlopeO = info.getDistance
+          farthestWordSlopeO = dictionary(i)
+        }
+      }
+    }
+    //run on PEAKS W/ SLOPES
+
+    for (i<- 0 until wordPeaks.length){
+      for(k<- 0 until  dictionary.length){
+        var wordListOther = findWordList(dictionary(k), words)
+        var derivListOther = deriver(wordListOther)
+        if (dictionary(k)!= startWord){
+          var timeSeries = new TimeSeries(1)//size TimeSeries
+          var timeSeriesOther = new TimeSeries(1)//size TimeSeries
+          for (j<- wordPeaks(i)._1 to wordPeaks(i)._3){
+            timeSeriesOther.addLast(derivListOther(j)._1, new TimeSeriesPoint(Array(derivListOther(j)._2))) //add count
+            timeSeries.addLast(derivList(j)._1, new TimeSeriesPoint(Array(derivList(j)._2))) //add count
+          }
+          //run DTW
+          var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, radius)
+          if (info.getDistance < lowCostSlopeP(i)){
+            lowCostSlopeP(i) = info.getDistance
+            closestWordSlopeP(i) = dictionary(k)
+          } else if (info.getDistance > highCostSlopeP(i)){
+            highCostSlopeP(i) = info.getDistance
+            farthestWordSlopeP(i) = dictionary(k)
+          }
+        }
+      }
+    }
+
+    //CHECK OUTPUT
     println("Closest Word Overall: " + closestWordOverall + " Distance: " + lowCostOverall)
     println("Farthest Word Overall: " + farthestWordOverall + " Distance: " + highCostOverall)
-    println("==========")
+    println("======")
+    for (i<- 0 until wordPeaks.length){
+      println("Closest Word at " + wordList(wordPeaks(i)._2)._1 + ": " + closestWordPeak(i) + " Distance: " + lowCostPeak(i))
+      println("Farthest Word at " + wordList(wordPeaks(i)._2)._1 + ": " + farthestWordPeak(i) + " Distance: " + highCostPeak(i))
+      println("======")
+    }
+    println("Closest Word by Slope: " + closestWordSlopeO + " Distance: " + lowCostSlopeO)
+    println("Farthest Word by Slope: " + farthestWordSlopeO + " Distance: " + highCostSlopeO)
+    println("======")
+    for (i<- 0 until wordPeaks.length){
+      println("Closest Word by Slope at " + wordList(wordPeaks(i)._2)._1 + ": " + closestWordSlopeP(i) + " Distance: " + lowCostSlopeP(i))
+      println("Farthest Word by Slope at " + wordList(wordPeaks(i)._2)._1 + ": " + farthestWordSlopeP(i) + " Distance: " + highCostSlopeP(i))
+      println("======")
+    }
+    println("======================================")
   }
 
   //Normalizes according to yearly publications (or some other array to divide by)
@@ -164,17 +239,18 @@ object WordLinker {
   //Cheap Slope calculation, returns same length array, where final value is same as previous
   // //(bad.If you don't like it send me more data))
   /* NEEDS: data: Year,Count
- *  RETURNS:newData: slopes 
+ *  RETURNS:newData: year,slopes
  * */
-  def deriver(data : List[(Double,Double)]) : Array[Double]  = {
-    var newData = Array[Double](data.length)
+  def deriver(data : List[(Double,Double)]) : List[(Double, Double)]  = {
+    var newData = List[(Double,Double)]()
     //find slope between every two points
-    for(i<- 0 until data.length-1) {
+    newData = (data(0)._1, 0.0) :: newData//slope at begin and end ==0.0 default
+    newData = (data(data.length-1)._1, 0.0) ::newData
+    for(i<- 1 until data.length-1) {
       //next-current
-      newData(i) = data(i+1)._2 - data(i)._2
+      newData = (data(i)._1, ((data(i+1)._2 - data(i)._2) + (data(i)._2 - data(i-1)._2))/2.0) :: newData //be sure data is sorted
     }
-    newData(newData.length-1) = newData(newData.length-2)
-    newData       //return
+    newData.sortWith(_._1<_._1)       //return
   }
   
   //Find "Peaks": given array, find Pos + Neg slopes (consistent) return ranges for peaks in array of tuples...return index of maxima? Need ranges

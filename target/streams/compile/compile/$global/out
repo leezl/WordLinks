@@ -3,13 +3,13 @@
 [debug] 	removed:Set()
 [debug] 	added: Set()
 [debug] 	modified: Set(/home/lieslw/WordLinks/src/main/scala/WordLinker.scala)
-[debug] Removed products: Set(/home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$smoother$1.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$peakFinder$1.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$main$1$$anonfun$apply$mcVI$sp$1.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$smoother$3.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$normalizer$1.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$comparePeaks$1$$anonfun$apply$mcVI$sp$3.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$main$1.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$deriver$1.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$findWordList$1.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$findWordList$2.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$smoother$4.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$smoother$2.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$smoother$2$$anonfun$apply$mcVI$sp$2.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$.class, /home/lieslw/WordLinks/target/scala-2.9.1/classes/WordLinker$$anonfun$comparePeaks$1.class)
+[debug] Removed products: Set()
 [debug] Modified external sources: Set()
 [debug] Modified binary dependencies: Set()
 [debug] Initial directly invalidated sources: Set(/home/lieslw/WordLinks/src/main/scala/WordLinker.scala)
 [debug] 
 [debug] Sources indirectly invalidated by:
-[debug] 	product: Set(/home/lieslw/WordLinks/src/main/scala/WordLinker.scala)
+[debug] 	product: Set()
 [debug] 	binary dep: Set()
 [debug] 	external source: Set()
 [debug] Initially invalidated: Set(/home/lieslw/WordLinks/src/main/scala/WordLinker.scala)
