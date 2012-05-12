@@ -2,17 +2,17 @@
 [debug] Initial source changes: 
 [debug] 	removed:Set()
 [debug] 	added: Set()
-[debug] 	modified: Set(/home/lieslw/WordLinks/src/main/scala/WordLinker.scala)
+[debug] 	modified: Set(/home/lieslw/WordLinks/src/main/scala/ClientQuery.scala)
 [debug] Removed products: Set()
 [debug] Modified external sources: Set()
 [debug] Modified binary dependencies: Set()
-[debug] Initial directly invalidated sources: Set(/home/lieslw/WordLinks/src/main/scala/WordLinker.scala)
+[debug] Initial directly invalidated sources: Set(/home/lieslw/WordLinks/src/main/scala/ClientQuery.scala)
 [debug] 
 [debug] Sources indirectly invalidated by:
 [debug] 	product: Set()
 [debug] 	binary dep: Set()
 [debug] 	external source: Set()
-[debug] Initially invalidated: Set(/home/lieslw/WordLinks/src/main/scala/WordLinker.scala)
+[debug] Initially invalidated: Set(/home/lieslw/WordLinks/src/main/scala/ClientQuery.scala)
 [info] Compiling 1 Scala source to /home/lieslw/WordLinks/target/scala-2.9.1/classes...
 [debug] Interfacing (CompilerInterface) with Scala compiler version 2.9.1.final
 [debug] Calling Scala compiler with arguments  (CompilerInterface):
@@ -21,7 +21,7 @@
 [debug] 	-bootclasspath
 [debug] 	/home/lieslw/jdk1.7.0_03/jre/lib/resources.jar:/home/lieslw/jdk1.7.0_03/jre/lib/rt.jar:/home/lieslw/jdk1.7.0_03/jre/lib/sunrsasign.jar:/home/lieslw/jdk1.7.0_03/jre/lib/jsse.jar:/home/lieslw/jdk1.7.0_03/jre/lib/jce.jar:/home/lieslw/jdk1.7.0_03/jre/lib/charsets.jar:/home/lieslw/jdk1.7.0_03/jre/classes:/home/lieslw/.sbt/boot/scala-2.9.1/lib/scala-library.jar
 [debug] 	-classpath
-[debug] 	/home/lieslw/WordLinks/target/scala-2.9.1/classes:/home/lieslw/WordLinks/lib/libsvm.jar:/home/lieslw/WordLinks/lib/Jama-1.0.2.jar:/home/lieslw/WordLinks/lib/commons-math-1.2.jar:/home/lieslw/WordLinks/lib/weka.jar:/home/lieslw/WordLinks/lib/javaml-0.1.6.jar:/home/lieslw/WordLinks/lib/ajt-2.5.jar
-[debug] 	/home/lieslw/WordLinks/src/main/scala/WordLinker.scala
+[debug] 	/home/lieslw/WordLinks/target/scala-2.9.1/classes:/home/lieslw/WordLinks/lib/libsvm.jar:/home/lieslw/WordLinks/lib/Jama-1.0.2.jar:/home/lieslw/WordLinks/lib/commons-math-1.2.jar:/home/lieslw/WordLinks/lib/weka.jar:/home/lieslw/WordLinks/lib/javaml-0.1.6.jar:/home/lieslw/WordLinks/lib/ajt-2.5.jar:/home/lieslw/.ivy2/cache/com.twitter/finagle-core_2.9.1/jars/finagle-core_2.9.1-1.9.12.jar:/home/lieslw/.ivy2/cache/com.twitter/util-core_2.9.1/jars/util-core_2.9.1-1.12.9.jar:/home/lieslw/.ivy2/cache/org.jboss.netty/netty/bundles/netty-3.2.7.Final.jar:/home/lieslw/.ivy2/cache/com.twitter/util-collection_2.9.1/jars/util-collection_2.9.1-1.12.9.jar:/home/lieslw/.ivy2/cache/commons-collections/commons-collections/jars/commons-collections-3.2.1.jar:/home/lieslw/.ivy2/cache/com.google.guava/guava/jars/guava-r09.jar:/home/lieslw/.ivy2/cache/com.twitter/util-hashing_2.9.1/jars/util-hashing_2.9.1-1.12.9.jar:/home/lieslw/.ivy2/cache/com.twitter/finagle-http_2.9.1/jars/finagle-http_2.9.1-1.9.12.jar:/home/lieslw/.ivy2/cache/com.twitter/util-logging_2.9.1/jars/util-logging_2.9.1-1.12.9.jar:/home/lieslw/.ivy2/cache/com.twitter/util-codec_2.9.1/jars/util-codec_2.9.1-1.12.9.jar:/home/lieslw/.ivy2/cache/commons-codec/commons-codec/jars/commons-codec-1.5.jar:/home/lieslw/.ivy2/cache/commons-lang/commons-lang/jars/commons-lang-2.6.jar
+[debug] 	/home/lieslw/WordLinks/src/main/scala/ClientQuery.scala
 [debug] 	Invalidated direct: Set()
 [debug] Incrementally invalidated: Set()

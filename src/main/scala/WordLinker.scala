@@ -1,3 +1,5 @@
+package main.scala
+
 import java.io.{BufferedReader, FileReader}
 import scala.collection.mutable._
 import net.sf.javaml.distance.fastdtw._
@@ -12,9 +14,14 @@ object WordLinker {
   var radius = 5
 
   def main(args: Array[String]) {
+
+    val quester = ClientQuery
+    var resultWord = ""
+    quester.requestWord(startWord)
+    println(resultWord)
     //data in
     //FOR NOW: read from file, (read in whole file)
-    totals = readTotals("/home/lieslw/NGramSearch/data/googlebooks-eng-all-totalcounts-20090715.txt")
+    /*totals = readTotals("/home/lieslw/NGramSearch/data/googlebooks-eng-all-totalcounts-20090715.txt")
     words = readWords("/home/lieslw/NGramSearch/data/SpecialSubset")
     //normalize
     words = normalizer(words, totals)
@@ -175,6 +182,7 @@ object WordLinker {
       println("======")
     }
     println("======================================")
+    */
   }
 
   //Normalizes according to yearly publications (or some other array to divide by)
