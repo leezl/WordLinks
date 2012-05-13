@@ -5,141 +5,89 @@ import scala.collection.mutable._
 import net.sf.javaml.distance.fastdtw._
 import net.sf.javaml.distance.fastdtw.timeseries.TimeSeries
 import net.sf.javaml.distance.fastdtw.timeseries.TimeSeriesPoint
+import scala.util.Random
 
 object WordLinker {
-  var totals = Map[Double, Double]()
   var words = List[(String,Double,Double)]()
-  var dictionary = List[String]()
   var startWord = "war"
   var radius = 5
+  var waitCount = 0
+  var sizeLimit = 200
+  var indices = List[Int]()
+  //Initialize Query Client
+  val quester = ClientQuery
+  //initialize Normalization Counts
+  var totals : Map[Double, Double] = readTotals("/home/lieslw/WordLinks/data/googlebooks-eng-all-totalcounts-20090715.txt")
+  //Load Mini-Dictionary from file:
+  var dictionary : List[String] = readWords("/home/lieslw/WordLinks/data/RandomList.txt")
 
   def main(args: Array[String]) {
+    //Query Initial Word
+    var currentWordList = findWord(startWord)
+    //currentWordList.foreach(item => println(item))   //DEBUG
+    //find derivatives
+    var currentWordSlopes = deriver(currentWordList)
+    //find peaks
+    var currentWordPeaks = peakFinder(currentWordSlopes)
+    //Pick random subset
+    //println("Num Words: " + dictionary.length) //~860
+    var randgen = new Random
+    for (i<- 0 until 20){
+      indices = i :: indices //ensure first 20 are present
+    }
+    while(indices.length < sizeLimit){
+      var newInd = randgen.nextInt(860)
+      if (!indices.contains(newInd)){
+        indices = newInd :: indices
+      }
+    }
+    println("Created index list")
 
-    val quester = ClientQuery
-    var resultWord = ""
-    quester.requestWord(startWord)
-    println(resultWord)
-    //data in
-    //FOR NOW: read from file, (read in whole file)
-    /*totals = readTotals("/home/lieslw/NGramSearch/data/googlebooks-eng-all-totalcounts-20090715.txt")
-    words = readWords("/home/lieslw/NGramSearch/data/SpecialSubset")
-    //normalize
-    words = normalizer(words, totals)
-    //find word match, collect matched values into array
-    //wordList: year and count for a specific word
-    var wordList = findWordList(startWord, words)
-    var derivList = deriver(wordList)
-    //smoothers
-    //var wordList3 = smoother(wordList, 3)
-    //var wordList5 = smoother(wordList, 5)
-    //var wordList10 = smoother(wordList,10)
-    //find peaks (store ranges)
-    //wordPeaks: begin, peak, end indices for peak ranges
-    var wordPeaks = peakFinder(wordList)
-    //var wordPeaks3 = peakFinder(wordList3)
-    //var wordPeaks5 = peakFinder(wordList5)
-    //var wordPeaks10 = peakFinder(wordList10)
-    //run various DTW (write own or use library?)
-    //iterate through 
-    var wordListOther = List[(Double, Double)]()
-    var lowCostOverall = 999.9
-    var highCostOverall = -1.0
-    var farthestWordOverall = ""
-    var closestWordOverall = ""
-    var lowCostSlopeO = 999.9
-    var highCostSlopeO = -1.0
-    var farthestWordSlopeO = ""
-    var closestWordSlopeO = ""
+    //Collect stats
     var lowCostPeak = MutableList[Double]()
     var highCostPeak = MutableList[Double]()
     var farthestWordPeak = MutableList[String]()
     var closestWordPeak = MutableList[String]()
-    for (i<- 0 until wordPeaks.length){
+    for (i<- 0 until currentWordPeaks.length){
       lowCostPeak += 999.0
       highCostPeak += -1.0
       farthestWordPeak += ""
       closestWordPeak += ""
     }
-    var lowCostSlopeP = MutableList[Double]()
-    var highCostSlopeP = MutableList[Double]()
-    var farthestWordSlopeP = MutableList[String]()
-    var closestWordSlopeP = MutableList[String]()
-    for (i<- 0 until wordPeaks.length){
-      lowCostSlopeP += 999.0
-      highCostSlopeP += -1.0
-      farthestWordSlopeP += ""
-      closestWordSlopeP += ""
-    }
-    //run OVERALL DTW
-    for (i<- 0 until dictionary.length){
-      if (dictionary(i) != startWord){
-        //compare other word to current
-        var wordListOther = findWordList(dictionary(i), words)
-        var timeSeries = new TimeSeries(1)//size TimeSeries
-        var timeSeriesOther = new TimeSeries(1)//size TimeSeries
-        for (j<- 0 until wordList.length){
-          timeSeriesOther.addLast(wordListOther(j)._1, new TimeSeriesPoint(Array(wordListOther(j)._2))) //add count
-          timeSeries.addLast(wordList(j)._1, new TimeSeriesPoint(Array(wordList(j)._2))) //add count
-        }
-        var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, radius)
-        if (info.getDistance < lowCostOverall){
-          lowCostOverall = info.getDistance
-          closestWordOverall = dictionary(i)
-        } else if (info.getDistance > highCostOverall){
-          highCostOverall = info.getDistance
-          farthestWordOverall = dictionary(i)
-        }
-      }
-    }
-    //run PEAKS DTW
-    for (i<- 0 until wordPeaks.length){
-      for(k<- 0 until  dictionary.length){
-        var wordListOther = findWordList(dictionary(k), words)
-        if (dictionary(k)!= startWord){
+    //loop over other words (read one in, gather stats, delete what you don't need)
+    for (i<- 0 until indices.length){  //dictionary
+      //grab word
+      var otherWordList = findWord(dictionary(indices(i)))
+      //find slopes
+      var otherWordSlopes = deriver(otherWordList)
+      //run DTW on peaks
+      for (j <- 0 until currentWordPeaks.length){  //peaks
+        if (otherWordList(0)._1!= startWord){
           var timeSeries = new TimeSeries(1)//size TimeSeries
           var timeSeriesOther = new TimeSeries(1)//size TimeSeries
-          for (j<- wordPeaks(i)._1 to wordPeaks(i)._3){
-            timeSeriesOther.addLast(wordListOther(j)._1, new TimeSeriesPoint(Array(wordListOther(j)._2))) //add count
-            timeSeries.addLast(wordList(j)._1, new TimeSeriesPoint(Array(wordList(j)._2))) //add count
+          for (k<- currentWordPeaks(j)._1 to currentWordPeaks(j)._3){
+            timeSeriesOther.addLast(otherWordSlopes(k)._1, new TimeSeriesPoint(Array(otherWordSlopes(k)._2))) //add count
+            timeSeries.addLast(currentWordSlopes(k)._1, new TimeSeriesPoint(Array(currentWordSlopes(k)._2))) //add count
           }
           //run DTW
           var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, radius)
-          //println("Warp Distance: " + info.getDistance)
-          //println("Warp Path:     " + info.getPath)
           if (info.getDistance < lowCostPeak(i)){
             lowCostPeak(i) = info.getDistance
-            closestWordPeak(i) = dictionary(k)
+            closestWordPeak(i) = otherWordList(0)._1
           } else if (info.getDistance > highCostPeak(i)){
             highCostPeak(i) = info.getDistance
-            farthestWordPeak(i) = dictionary(k)
+            farthestWordPeak(i) = otherWordList(0)._1
           }
         }
       }
-    }
-    //run on SLOPES OVERALL
-    for (i<- 0 until dictionary.length){
-      if (dictionary(i) != startWord){
-        //compare other word to current
-        var wordListOther = findWordList(dictionary(i), words)
-        var derivListOther = deriver(wordListOther)
-        var timeSeries = new TimeSeries(1)  //size TimeSeries
-        var timeSeriesOther = new TimeSeries(1)  //size TimeSeries
-        for (j<- 0 until derivList.length){
-          timeSeriesOther.addLast(derivListOther(j)._1, new TimeSeriesPoint(Array(derivListOther(j)._2))) //add count
-          timeSeries.addLast(derivList(j)._1, new TimeSeriesPoint(Array(derivList(j)._2))) //add count
-        }
-        var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, radius)
-        if (info.getDistance < lowCostSlopeO){
-          lowCostSlopeO = info.getDistance
-          closestWordSlopeO = dictionary(i)
-        } else if (info.getDistance > highCostSlopeO){
-          highCostSlopeO = info.getDistance
-          farthestWordSlopeO = dictionary(i)
-        }
-      }
-    }
-    //run on PEAKS W/ SLOPES
 
+    }
+
+
+    /*
+    //smoothers
+    //var wordList3 = smoother(wordList, 3)
+    //run on PEAKS W/ SLOPES
     for (i<- 0 until wordPeaks.length){
       for(k<- 0 until  dictionary.length){
         var wordListOther = findWordList(dictionary(k), words)
@@ -163,26 +111,35 @@ object WordLinker {
         }
       }
     }
-
+    */
     //CHECK OUTPUT
-    println("Closest Word Overall: " + closestWordOverall + " Distance: " + lowCostOverall)
-    println("Farthest Word Overall: " + farthestWordOverall + " Distance: " + highCostOverall)
-    println("======")
-    for (i<- 0 until wordPeaks.length){
-      println("Closest Word at " + wordList(wordPeaks(i)._2)._1 + ": " + closestWordPeak(i) + " Distance: " + lowCostPeak(i))
-      println("Farthest Word at " + wordList(wordPeaks(i)._2)._1 + ": " + farthestWordPeak(i) + " Distance: " + highCostPeak(i))
-      println("======")
-    }
-    println("Closest Word by Slope: " + closestWordSlopeO + " Distance: " + lowCostSlopeO)
-    println("Farthest Word by Slope: " + farthestWordSlopeO + " Distance: " + highCostSlopeO)
-    println("======")
-    for (i<- 0 until wordPeaks.length){
-      println("Closest Word by Slope at " + wordList(wordPeaks(i)._2)._1 + ": " + closestWordSlopeP(i) + " Distance: " + lowCostSlopeP(i))
-      println("Farthest Word by Slope at " + wordList(wordPeaks(i)._2)._1 + ": " + farthestWordSlopeP(i) + " Distance: " + highCostSlopeP(i))
+    for (i<- 0 until currentWordPeaks.length){
+      println("Closest Word by Slope at " + currentWordList(wordPeaks(i)._2)._1 + ": " + closestWordPeak(i) + " Distance: " + lowCostPeak(i))
+      println("Farthest Word by Slope at " + currentWordList(wordPeaks(i)._2)._1 + ": " + farthestWordPeak(i) + " Distance: " + highCostPeak(i))
       println("======")
     }
     println("======================================")
-    */
+  }
+  /*Handles fidnign word, waiting for reutrn, and printing progress*/
+  def findWord(word : String) : List[(String, Double, Double)] = {
+    var resultWord = ""
+    quester.requestWord(word)
+    //Wait for Result...this is buggy
+    while(quester.done != true){
+      if(waitCount%100000000 == 0){
+        println("..." + waitCount)//println(quester.done )
+      }
+      waitCount += 1
+    }
+    waitCount = 0
+    if (quester.done==true && quester.noFinish == false){
+      resultWord = quester.result
+      //println(resultWord)
+    } else{
+      println("Failed to find result: Server may not be up")
+      sys.exit
+    }
+    normalizer(convertQueryToList(resultWord)).sortWith(_._2<_._2)//CHECK THIS
   }
 
   //Normalizes according to yearly publications (or some other array to divide by)
@@ -190,7 +147,7 @@ object WordLinker {
   *         yearlyGRams: Year,TotalCount
   *  RETURNS:newData: Word,Year,CountNew 
   * */
-  def normalizer(data : List[(String, Double,Double)], yearlyGrams : Map[Double,Double]) : List[(String,  Double,Double)] = {
+  def normalizer(data : List[(String, Double, Double)], yearlyGrams : Map[Double,Double] = totals) : List[(String,  Double,Double)] = {
     //make temp array (no overwriting)
     var newData = List[(String,Double,Double)]()
     var tempTuple1 = ""
@@ -217,31 +174,31 @@ object WordLinker {
  *         smoothness:
  *  RETURNS:newData: Year,CountNew 
  * */
-  def smoother(data : List[(Double,Double)], smoothness : Int = 3) : List[(Double,Double)] = {
+  def smoother(data : List[(String, Double, Double)], smoothness : Int = 3) : List[(String, Double, Double)] = {
     //create temp Array
-    var newData = List[(Double,Double)]()
+    var newData = List[(String, Double, Double)]()
     var tempVal =0.0
     if(smoothness*2+1 < data.length){
       //sliding window for averages : (smoothness size buffer at begin and end)
       for (i<-0 until smoothness){
-        newData = (data(i)._1, data(i)._2) :: newData///ends are not smoothed
+        newData = (data(i)._1, data(i)._2, data(i)._3) :: newData///ends are not smoothed
       }
       for (i<- smoothness until data.length-smoothness){
         //Add values from i-smoothness, until i+smoothness
         for (j<- i-smoothness until i+smoothness){
-          tempVal += data(j)._2
+          tempVal += data(j)._3
         }
         //divide by 2*smoothness+1
         tempVal = tempVal/((smoothness*2)+1)
-        newData = (data(i)._1, tempVal) :: newData
+        newData = (data(i)._1, data(i)._2, tempVal) :: newData
       }
       for (i<- data.length-smoothness until data.length){
-        newData = (data(i)._1, data(i)._2) :: newData///ends are not smoothed
+        newData = (data(i)._1, data(i)._2, data(i)._3) :: newData///ends are not smoothed
       }
     } else{
       println("Smoothness value too large")
     }
-    newData.sortWith(_._1<_._1)
+    newData.sortWith(_._2<_._2)
   }
   
   //Cheap Slope calculation, returns same length array, where final value is same as previous
@@ -249,16 +206,16 @@ object WordLinker {
   /* NEEDS: data: Year,Count
  *  RETURNS:newData: year,slopes
  * */
-  def deriver(data : List[(Double,Double)]) : List[(Double, Double)]  = {
-    var newData = List[(Double,Double)]()
+  def deriver(data : List[(String, Double, Double)]) : List[(String, Double, Double)]  = {
+    var newData = List[(String, Double, Double)]()
     //find slope between every two points
-    newData = (data(0)._1, 0.0) :: newData//slope at begin and end ==0.0 default
-    newData = (data(data.length-1)._1, 0.0) ::newData
+    newData = (data(0)._1, data(0)._2, 0.0) :: newData//slope at begin and end ==0.0 default
+    newData = (data(data.length-1)._1, data(data.length-1)._2, 0.0) ::newData
     for(i<- 1 until data.length-1) {
       //next-current
-      newData = (data(i)._1, ((data(i+1)._2 - data(i)._2) + (data(i)._2 - data(i-1)._2))/2.0) :: newData //be sure data is sorted
+      newData = (data(i)._1, data(i)._2, ((data(i+1)._3 - data(i)._3) + (data(i)._3 - data(i-1)._3))/2.0) :: newData //be sure data is sorted
     }
-    newData.sortWith(_._1<_._1)       //return
+    newData.sortWith(_._2<_._2)       //return
   }
   
   //Find "Peaks": given array, find Pos + Neg slopes (consistent) return ranges for peaks in array of tuples...return index of maxima? Need ranges
@@ -267,7 +224,7 @@ object WordLinker {
  *         threshold:
  *  RETURNS:newData: begin, peak, end 
  * */
-  def peakFinder(data : List[(Double,Double)], threshold : Int = 2) : List[(Int, Int, Int)] = {//List = [leftLow, Peak, rightLow]
+  def peakFinder(data : List[(String, Double, Double)], threshold : Int = 2) : List[(Int, Int, Int)] = {//List = [leftLow, Peak, rightLow]
     //like sliding window, find points that are higher then -threshold- many neighbors
     var peaks = List[(Int,Int,Int)]()
     //loop along data searching for maxima (expand threshold to find width of maxima: call this function in loop with varying threshold?)
@@ -275,26 +232,26 @@ object WordLinker {
     //find peaks:
     for (i<-1 until data.length-1){
       //0 at max and mins, local
-      if (data(i)._2>data(i-1)._2 && data(i)._2>data(i+1)._2){ //slope at
+      if (data(i)._3>data(i-1)._3 && data(i)._3>data(i+1)._3){ //slope at
         //find lowest backwards
-        var lowBack = data(i-1)._2
+        var lowBack = data(i-1)._3
         var j = i-2
-        while(j>1 && data(j)._2<lowBack){
-          lowBack=data(j)._2
+        while(j>1 && data(j)._3<lowBack){
+          lowBack=data(j)._3
           j=j-1
         }
         //find lowest forwards
-        var lowFore = data(i+1)._2
+        var lowFore = data(i+1)._3
         var k = i+2
-        while(k<data.length-1 && data(k)._2<lowFore){
-          lowFore=data(k)._2
+        while(k<data.length-1 && data(k)._3<lowFore){
+          lowFore=data(k)._3
           k=k+1
         }
         //check min threshold
         if (i-j>threshold && k-i>threshold){
           peaks = (j, i, k) :: peaks
-          //println(" with start at " + data(j)._1 + " Peak at " + data(i)._1 + " and end at " + data(k)._1)
-          //println("Values were " + data(j)._2 + " " + data(i)._2 + " " + data(k)._1)
+          //println(" with start at " + data(j)._2 + " Peak at " + data(i)._2 + " and end at " + data(k)._2)
+          //println("Values were " + data(j)._3 + " " + data(i)._3 + " " + data(k)._2)
         }
       }
     }
@@ -326,22 +283,19 @@ object WordLinker {
   }
 
   /* NEEDS: filename: string
- *  RETURNS:newData: word, year, count 
+ *  RETURNS:newData: List[string]
  * */
-  def readWords(filename : String) : List[(String, Double, Double)] = {
-    var counts = List[(String,Double,Double)]()
+  def readWords(filename : String) : List[String] = {
+    var counts = List[String]()
     try{
       val reader = new BufferedReader(new FileReader(filename))
       var line = reader.readLine()
       line = reader.readLine()
       var text = Array[String]()
       while(line!=null){
-        text = line.split("""[\,]+""")
-        counts = (text(0), text(1).toDouble, text(2).toDouble) :: counts
-        //println(text(0) + " " + text(1).toDouble + " " + text(2).toDouble)
-        if (!dictionary.contains(text(0))){
-          dictionary = text(0) :: dictionary
-          //println(text(0))
+        text = line.split("[ \t\n]+")
+        if (!counts.contains(text(0))){
+          counts = text(0) :: counts
         }
         line = reader.readLine()
       }
@@ -351,26 +305,30 @@ object WordLinker {
       case whatever => 
         println("Error: " + whatever)
     }
-    counts
+    counts.sortWith(_<_)
   }
 
-  /* NEEDS:word: string 
-  *        data: word,Year,Count
- *  RETURNS:newData: Year,count 
- * */
-  def findWordList(word : String, data : List[(String, Double, Double)]) : List[(Double, Double)] = {
-    var wordOccur = List[(Double, Double)]()
-    //search list for word matches, append to wordOccur
-    for (i<- 0 until data.length){
-      if (data(i)._1 == word) {
-        //println("Year, Count: " + data(i)._2 + " " + data(i)._3)
-        wordOccur = (data(i)._2, data(i)._3) :: wordOccur
+  /*This takes the String containing all word year count values and splits it*/
+  def convertQueryToList(result : String) : List[(String, Double, Double)] = {
+    //create list
+    var tempList = List[(String, Double, Double)]()
+    //split string
+    var line = result.split("[\n]+")  //split lines
+    //println("Line: " + line(0))
+    //loop thru string, and parse
+    for(i<- 0 until line.length) {
+      //println("Length: " + line(i).length + " " + line(i).getClass)
+      var words = line(i).split("[ \t]+") //split on spaces and tabs
+      if (words.length>3) {
+        tempList = (words(0), words(1).toDouble, words(2).toDouble) :: tempList
+      } else{
+        println("TOO SHORT: " + words)
       }
     }
-    wordOccur.sortWith(_._1<_._1) //sort by year
+    tempList.sortWith(_._2<_._2) //(reverse/ sort by year)
   }
 
-  def comparePeaks(firstWords : List[(Double,Double)], first : List[(Int, Int, Int)], secondWords : List[(Double,Double)], second: List[(Int, Int, Int)]) {
+  /*def comparePeaks(firstWords : List[(String, Double,Double)], first : List[(Int, Int, Int)], secondWords : List[(String, Double, Double)], second: List[(Int, Int, Int)]) {
     //compare overlaping ranges for peaks
     var tolerance = 4
     println("Comparing Peaks: ")
@@ -396,6 +354,6 @@ object WordLinker {
       }
       println("End peak search: " + i)
     }
-  }
+  }*/
 
 }

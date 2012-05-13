@@ -6,7 +6,7 @@ import java.net.InetSocketAddress
 import org.jboss.netty.util.CharsetUtil
 import org.jboss.netty.handler.codec.http._
 import org.jboss.netty.handler.codec.http.HttpResponseStatus._
-import com.twitter.finagle.{Service, SimpleFilter}
+import com.twitter.finagle._
 import com.twitter.util._
 
 /**
@@ -21,6 +21,14 @@ object ClientQuery {
   /**
    * Convert HTTP 4xx and 5xx class responses into Exceptions.
    */
+
+  val handleErrors = new HandleErrors
+  val defaultAddress = "http://134.197.34.120"
+  val defaultRequest = "/search?q="
+  var result = ""
+  var done = true              //check to see if query returned results
+  var noFinish = false            //check to see if query will not return results
+
   class HandleErrors extends SimpleFilter[HttpRequest, HttpResponse] {
     def apply(request: HttpRequest, service: Service[HttpRequest, HttpResponse]) = {
       // flatMap asynchronously responds to requests and can "map" them to both
@@ -42,19 +50,16 @@ object ClientQuery {
     //.requestTimeout() //can't figure out util.Duration
     .build()
 
-  val handleErrors = new HandleErrors
-  val defaultAddress = "http://134.197.34.120"
-  val defaultRequest = "/search?q="
 
   def requestWord(word : String) {
+    done = false
+    noFinish = false
 
     // compose the Filter with the client:
     val client: Service[HttpRequest, HttpResponse] = handleErrors andThen clientWithoutErrorHandling
 
     println("))) Issuing request: ")
     val request2 = makeUnauthorizedRequest(word, client)
-    //var check = request2.get()
-   // println("Here: " + check.getContent)
 
     // When both request1 and request2 have completed, close the TCP connection(s).
     client.release()
@@ -70,7 +75,7 @@ object ClientQuery {
       println("What'd we get: " + response) //+ ",    " + (response.getContent).toString())
       var values = response.getContent //dynamicChannelBuffer
       var b : Byte = 0
-      var result = ""
+      //var result = ""
       println("Capacity: " + values.capacity)
       for (i<- 0 until values.capacity) {
         b = values.getByte(i);
@@ -78,9 +83,10 @@ object ClientQuery {
       }
       result.reverse
       println("Result in Callback: " + result.slice (0, 10))
+      done =true
     }
     client(unauthorizedRequest) onFailure { error =>
-      println("))) request errored: " + error.getClass.getName + " , " + error.getMessage + " " + error.getStackTrace.toString)
+      println("))) request errored: " + error.getClass.getName + " , " + error.getMessage)
     }
   }
 }
