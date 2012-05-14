@@ -6,29 +6,64 @@ import net.sf.javaml.distance.fastdtw._
 import net.sf.javaml.distance.fastdtw.timeseries.TimeSeries
 import net.sf.javaml.distance.fastdtw.timeseries.TimeSeriesPoint
 import scala.util.Random
+import util.Random
+import util.Random._
+import java.util.Collections
+import scalala.tensor.dense._
+import scalala.tensor.dense.DenseVector._
+import scalala.tensor.dense.DenseMatrix._
+import scala.collection.mutable._
+import scalala.scalar._
+import scalala.tensor.::
+import scalala.tensor.mutable._
+import scalala.tensor.sparse._
+import scalala.library.Library._
+import scalala.library.LinearAlgebra._
+import scalala.library.Statistics._
+import scalala.library.Plotting._
+import scalala.operators.Implicits._
 
 object WordLinker {
   var words = List[(String,Double,Double)]()
   var startWord = "war"
   var radius = 5
   var waitCount = 0
-  var sizeLimit = 200
+  var sizeLimit = 100
   var indices = List[Int]()
   //Initialize Query Client
   val quester = ClientQuery
   //initialize Normalization Counts
+  var years = List[Double]()
   var totals : Map[Double, Double] = readTotals("/home/lieslw/WordLinks/data/googlebooks-eng-all-totalcounts-20090715.txt")
+  years = years.sortWith(_<_)
   //Load Mini-Dictionary from file:
   var dictionary : List[String] = readWords("/home/lieslw/WordLinks/data/RandomList.txt")
+  var orderedDictionary = List[(String, Double, Double)]() //word, distance
 
   def main(args: Array[String]) {
+    println("Finding first word")
     //Query Initial Word
     var currentWordList = findWord(startWord)
     //currentWordList.foreach(item => println(item))   //DEBUG
     //find derivatives
     var currentWordSlopes = deriver(currentWordList)
+    //currentWordSlopes.foreach(item => println(item))
     //find peaks
     var currentWordPeaks = peakFinder(currentWordSlopes)
+    //currentWordPeaks.foreach(item => println(item))
+    println("Peaks: " + currentWordPeaks.length)
+    //Collect stats
+    var lowCostPeak = MutableList[Double]()
+    var highCostPeak = MutableList[Double]()
+    var farthestWordPeak = MutableList[String]()
+    var closestWordPeak = MutableList[String]()
+    for (i<- 0 until currentWordPeaks.length){
+      lowCostPeak += 999.0
+      highCostPeak += -1.0
+      farthestWordPeak += ""
+      closestWordPeak += ""
+    }
+
     //Pick random subset
     //println("Num Words: " + dictionary.length) //~860
     var randgen = new Random
@@ -43,21 +78,13 @@ object WordLinker {
     }
     println("Created index list")
 
-    //Collect stats
-    var lowCostPeak = MutableList[Double]()
-    var highCostPeak = MutableList[Double]()
-    var farthestWordPeak = MutableList[String]()
-    var closestWordPeak = MutableList[String]()
-    for (i<- 0 until currentWordPeaks.length){
-      lowCostPeak += 999.0
-      highCostPeak += -1.0
-      farthestWordPeak += ""
-      closestWordPeak += ""
-    }
     //loop over other words (read one in, gather stats, delete what you don't need)
+    println("Looping through other words")
     for (i<- 0 until indices.length){  //dictionary
       //grab word
+      println("Finding " + "'" + dictionary(indices(i)) + "'")
       var otherWordList = findWord(dictionary(indices(i)))
+      println("FOUND")
       //find slopes
       var otherWordSlopes = deriver(otherWordList)
       //run DTW on peaks
@@ -66,23 +93,26 @@ object WordLinker {
           var timeSeries = new TimeSeries(1)//size TimeSeries
           var timeSeriesOther = new TimeSeries(1)//size TimeSeries
           for (k<- currentWordPeaks(j)._1 to currentWordPeaks(j)._3){
-            timeSeriesOther.addLast(otherWordSlopes(k)._1, new TimeSeriesPoint(Array(otherWordSlopes(k)._2))) //add count
-            timeSeries.addLast(currentWordSlopes(k)._1, new TimeSeriesPoint(Array(currentWordSlopes(k)._2))) //add count
+            //println("Value that errored...: " + k)
+            //Time Series is : year and count?
+            timeSeriesOther.addLast(otherWordSlopes(k)._2, new TimeSeriesPoint(Array(otherWordSlopes(k)._3))) //add count
+            timeSeries.addLast(currentWordSlopes(k)._2, new TimeSeriesPoint(Array(currentWordSlopes(k)._3))) //add count
           }
           //run DTW
           var info = dtw.FastDTW.getWarpInfoBetween(timeSeries, timeSeriesOther, radius)
-          if (info.getDistance < lowCostPeak(i)){
-            lowCostPeak(i) = info.getDistance
-            closestWordPeak(i) = otherWordList(0)._1
-          } else if (info.getDistance > highCostPeak(i)){
-            highCostPeak(i) = info.getDistance
-            farthestWordPeak(i) = otherWordList(0)._1
+          orderedDictionary = (otherWordList(0)._1, currentWordPeaks(j)._2.toDouble, info.getDistance) :: orderedDictionary
+          //println("Ran DTW")
+          if (info.getDistance < lowCostPeak(j)){
+            lowCostPeak(j) = info.getDistance
+            closestWordPeak(j) = otherWordList(0)._1
+          } else if (info.getDistance > highCostPeak(j)){
+            highCostPeak(j) = info.getDistance
+            farthestWordPeak(j) = otherWordList(0)._1
           }
         }
       }
 
     }
-
 
     /*
     //smoothers
@@ -112,21 +142,64 @@ object WordLinker {
       }
     }
     */
+
     //CHECK OUTPUT
-    for (i<- 0 until currentWordPeaks.length){
-      println("Closest Word by Slope at " + currentWordList(wordPeaks(i)._2)._1 + ": " + closestWordPeak(i) + " Distance: " + lowCostPeak(i))
-      println("Farthest Word by Slope at " + currentWordList(wordPeaks(i)._2)._1 + ": " + farthestWordPeak(i) + " Distance: " + highCostPeak(i))
-      println("======")
+    currentWordPeaks = currentWordPeaks.sortWith(_._2< _._2)
+    for (i <- 0 until currentWordPeaks.length){
+      if (currentWordList(currentWordPeaks(i)._2)._2 >1900 && currentWordList(currentWordPeaks(i)._2)._2 <2001){
+        println("Year: " + currentWordList(currentWordPeaks(i)._2)._2)
+        println("Closest Word by Slope at " + currentWordList(currentWordPeaks(i)._2)._1 + ": " + closestWordPeak(i) + " Distance: " + lowCostPeak(i))
+        println("Farthest Word by Slope at " + currentWordList(currentWordPeaks(i)._2)._1 + ": " + farthestWordPeak(i) + " Distance: " + highCostPeak(i))
+        println("======")
+      }
     }
     println("======================================")
+
+    //Attempt Plotting:
+    var x = DenseVector.range(1900, 2001) //years
+    plot.hold = true
+    orderedDictionary = orderedDictionary.sortWith(_._2<_._2)//sort by year
+    for(i <- 0 until currentWordPeaks.length){
+      //get cost in all peaks for each word
+      for (j<- 0 until indices.length){
+        //get each word
+        var tempList = orderedDictionary.filter(item => item==dictionary(indices(j)))
+        //make array of costs in order by year
+        //make vector
+        //var y = DenseVector(Array())
+        //plot()
+      }
+
+    }
+    //var y = DenseVector()
+    //orderedDictionary.foreach(item => println("Word: " + item._1 + " , " + item._2 + " , " + item._3))//word, peak, cost
+    
+    sys.exit()
   }
-  /*Handles fidnign word, waiting for reutrn, and printing progress*/
+  
+  def padMissingYears(input : List[(String, Double, Double)]) : List[(String, Double, Double)] = {
+    var output = List[(String, Double, Double)]()
+    input.sortWith(_._2<_._2)
+    var j = 0
+    for(i <- 0 until years.size){
+      //println(input(j)._2 + "   " + years(i))
+      if (input(j)._2 == years(i)){
+        output = input(j) :: output
+        j += 1
+      } else {
+        output = (input(0)._1, years(i), 0.0) :: output
+      }
+    }
+    output.sortWith(_._2<_._2)
+  }
+  
+  /*Handles finding word, waiting for return, and printing progress*/
   def findWord(word : String) : List[(String, Double, Double)] = {
     var resultWord = ""
-    quester.requestWord(word)
+    quester.requestWord(word) /////////////////////////////////
     //Wait for Result...this is buggy
     while(quester.done != true){
-      if(waitCount%100000000 == 0){
+      if(waitCount%1000000000 == 0){
         println("..." + waitCount)//println(quester.done )
       }
       waitCount += 1
@@ -137,9 +210,9 @@ object WordLinker {
       //println(resultWord)
     } else{
       println("Failed to find result: Server may not be up")
-      sys.exit
+      sys.exit()
     }
-    normalizer(convertQueryToList(resultWord)).sortWith(_._2<_._2)//CHECK THIS
+    normalizer(padMissingYears(convertQueryToList(resultWord))).sortWith(_._2<_._2)//CHECK THIS
   }
 
   //Normalizes according to yearly publications (or some other array to divide by)
@@ -270,6 +343,7 @@ object WordLinker {
       var text = Array[String]()
       while(line!=null){
         text = line.split("""[\s]+""")
+        years = text(0).toDouble :: years
         totals(text(0).toDouble) = text(1).toDouble
         line = reader.readLine()
       }
@@ -293,7 +367,7 @@ object WordLinker {
       line = reader.readLine()
       var text = Array[String]()
       while(line!=null){
-        text = line.split("[ \t\n]+")
+        text = line.split("""[\s]+""")
         if (!counts.contains(text(0))){
           counts = text(0) :: counts
         }

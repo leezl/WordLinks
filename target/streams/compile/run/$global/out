@@ -24,6 +24,14 @@
 [debug] 	/home/lieslw/.ivy2/cache/commons-lang/commons-lang/jars/commons-lang-2.6.jar
 [debug] Waiting for thread run-main to exit
 [debug] 	Thread run-main exited.
+[debug] Waiting for thread FinagleClientIO-3 to exit
+[debug] 	Thread FinagleClientIO-3 exited.
+[debug] Waiting for thread FinagleClientBoss-1 to exit
+[debug] 	Thread FinagleClientBoss-1 exited.
+[debug] Waiting for thread FinagleClientIO-2 to exit
+[debug] 	Thread FinagleClientIO-2 exited.
+[debug] Waiting for thread FinagleClientIO-1 to exit
+[debug] 	Thread FinagleClientIO-1 exited.
 [debug] Interrupting remaining threads (should be all daemons).
 [debug] Sandboxed run complete..
 [debug] Exited with code 0

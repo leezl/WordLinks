@@ -54,6 +54,7 @@ object ClientQuery {
   def requestWord(word : String) {
     done = false
     noFinish = false
+    result = ""
 
     // compose the Filter with the client:
     val client: Service[HttpRequest, HttpResponse] = handleErrors andThen clientWithoutErrorHandling
@@ -62,7 +63,7 @@ object ClientQuery {
     val request2 = makeUnauthorizedRequest(word, client)
 
     // When both request1 and request2 have completed, close the TCP connection(s).
-    client.release()
+    //client.release()
   }
 
   private[this] def makeUnauthorizedRequest(word : String, client: Service[HttpRequest, HttpResponse]) = {
@@ -72,17 +73,17 @@ object ClientQuery {
     // use the onFailure callback since we convert HTTP 4xx and 5xx class
     // responses to Exceptions.
     client(unauthorizedRequest) onSuccess { response =>
-      println("What'd we get: " + response) //+ ",    " + (response.getContent).toString())
+      //println("Result : " + response) //+ ",    " + (response.getContent).toString())
       var values = response.getContent //dynamicChannelBuffer
       var b : Byte = 0
       //var result = ""
-      println("Capacity: " + values.capacity)
+      println("Size of Result: " + values.capacity)
       for (i<- 0 until values.capacity) {
         b = values.getByte(i);
         result += b.toChar
       }
       result.reverse
-      println("Result in Callback: " + result.slice (0, 10))
+      println("Result in Callback (first line): " + result.slice (0, 10))
       done =true
     }
     client(unauthorizedRequest) onFailure { error =>
